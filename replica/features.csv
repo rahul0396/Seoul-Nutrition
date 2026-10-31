@@ -1,0 +1,53 @@
+feature,area,priority,original,clone,notes
+Announcement bar with rotating pausable messages,header,must,yes,no,
+Mega menu with benefit and category groups,header,must,yes,no,
+Mobile nav drawer,header,must,yes,no,
+Cart count in header,header,must,yes,no,
+Hero slideshow with CTA,home,must,yes,no,
+Shop by category tiles,home,must,yes,no,
+Health-need tabbed product grid,home,must,yes,no,
+Collection page with product grid,collection,must,yes,no,
+Filter drawer (availability tags price),collection,must,yes,no,
+Sort (featured relevance best selling price),collection,must,yes,no,
+Product card with pack pills and add to cart,collection,must,yes,no,
+Breadcrumbs,collection,must,yes,no,
+Product gallery with thumbnails,product,must,yes,no,
+Pack size selector with price per pack,product,must,yes,no,
+Sale price MRP and percent off,product,must,yes,no,
+Quantity stepper,product,must,yes,no,
+Add to cart and Buy now,product,must,yes,no,
+Description ingredients how to take FAQ sections,product,must,yes,no,
+Cart drawer with line items and qty,cart,must,yes,no,
+Billing summary,cart,must,yes,no,
+Checkout,cart,must,yes,no,needs backend: Razorpay or Shopify
+Search with results page,search,must,yes,no,
+Footer with link groups and newsletter,footer,must,yes,no,
+Policy and content pages,content,must,yes,no,
+Coupon field and available coupons list,cart,should,yes,no,
+Free-gift milestone progress,cart,should,yes,no,
+Member price on cards and PDP,membership,should,yes,no,
+Membership page with plan and FAQ,membership,should,yes,no,
+Notify me when back in stock,product,should,yes,no,
+Wishlist,account,should,yes,no,
+Account login and order history,account,should,yes,no,needs backend
+Rating summary histogram and reviews list,product,should,yes,no,
+Write a review,product,should,yes,no,needs backend
+Lightbox gallery,product,should,yes,no,
+Trust badges and benefit claims,product,should,yes,no,
+Lab report links,product,should,yes,no,
+Sale countdown timer,home,should,yes,no,
+SEO blocks on collection (comparison tables FAQ),collection,should,yes,no,
+Video review carousel with quick view,home,could,yes,no,
+Expert team cards,home,could,yes,no,
+Testimonial cards,home,could,yes,no,
+Trending search chips,home,could,yes,no,
+Signup discount popup,engagement,could,yes,no,
+Free consultation booking form,content,could,yes,no,
+Blog listing and article,content,could,yes,no,
+Contact form,content,could,yes,no,
+AI chat and ask-AI about ingredients,engagement,could,yes,skip,third-party vendor; choose your own later
+AI review summary,product,could,yes,skip,third-party vendor
+Disney and Marvel kids melts,catalogue,could,yes,skip,licensed characters
+Their reviews and ratings,product,could,yes,skip,their customers' content
+Order tracking via Clickpost,account,could,yes,skip,use your own logistics provider's tracking link
+Mobile app download links,footer,could,yes,skip,no app yet
