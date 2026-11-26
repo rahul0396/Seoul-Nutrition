@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Pause, Play, Quote, Volume2, VolumeX } from "lucide-react";
 import { healthTabs, heroSlides, saleEndsAt } from "@/data/site";
-import { products } from "@/data/products";
+import { useCatalog } from "@/lib/catalog";
 import type { Product } from "@/data/types";
 import { useStore } from "@/lib/store";
 import { inr } from "@/lib/pricing";
@@ -41,6 +41,7 @@ export function Countdown({ to, dark = true }: { to: string; dark?: boolean }) {
 }
 
 export function HeroSlider() {
+  const { products } = useCatalog();
   const [i, setI] = useState(0);
   const [paused, setPaused] = useState(false);
   const n = heroSlides.length;
@@ -49,7 +50,7 @@ export function HeroSlider() {
     const t = setInterval(() => setI((x) => (x + 1) % n), 5000);
     return () => clearInterval(t);
   }, [paused, n]);
-  const art = [products[0], products[2], products[6]];
+  const art = [products[0], products[2], products[6]].filter(Boolean);
 
   return (
     <section aria-roledescription="carousel" aria-label="Featured" className="relative overflow-hidden" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
@@ -69,7 +70,7 @@ export function HeroSlider() {
                 </div>
                 <div className="relative mx-auto hidden w-full max-w-md md:block">
                   <div className="absolute inset-8 rounded-full bg-white/10 blur-2xl" />
-                  <PackArt product={art[k % art.length]} className="relative w-full animate-float drop-shadow-2xl [&>rect:first-of-type]:opacity-0" />
+                  {art.length > 0 && <PackArt product={art[k % art.length]} className="relative w-full animate-float drop-shadow-2xl [&>rect:first-of-type]:opacity-0" />}
                 </div>
               </div>
             </div>
@@ -91,6 +92,7 @@ export function HeroSlider() {
 }
 
 export function HealthTabs() {
+  const { products } = useCatalog();
   const [tab, setTab] = useState(healthTabs[0].key);
   const list = useMemo(() => {
     const all = tab === "best" ? [...products].sort((a, b) => a.rank - b.rank) : products.filter((p) => p.benefits.includes(tab));
@@ -166,7 +168,8 @@ function QuickView({ product, onClose }: { product: Product; onClose: () => void
 }
 
 export function VideoReviews() {
-  const featured = [products[0], products[2], products[6], products[8], products[7], products[1]];
+  const { products } = useCatalog();
+  const featured = [products[0], products[2], products[6], products[8], products[7], products[1]].filter(Boolean);
   const [open, setOpen] = useState<Product | null>(null);
   return (
     <>

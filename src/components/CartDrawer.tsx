@@ -4,8 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Check, ChevronDown, Gift, ShoppingCart, Tag, Trash2, Truck } from "lucide-react";
-import { coupons, membership, shipping } from "@/data/site";
-import { products } from "@/data/products";
+import { useCatalog } from "@/lib/catalog";
 import { couponDiscount, couponStatus, inr, memberPrice } from "@/lib/pricing";
 import { useStore } from "@/lib/store";
 import { PackArt } from "./PackArt";
@@ -34,12 +33,22 @@ function Milestones() {
 }
 
 function Coupons() {
-  const { couponCode, applyCoupon, summary, showToast } = useStore();
+  const { couponCode, applyCoupon, addCoupon, pricing, summary, showToast } = useStore();
+  const { coupons } = useCatalog(); // coupons listed in the cart
   const [code, setCode] = useState("");
   const [err, setErr] = useState("");
   const base = summary.saleTotal - summary.memberSaving;
-  const apply = (c: string) => {
-    const hit = coupons.find((x) => x.code === c.trim().toUpperCase());
+  const apply = async (c: string) => {
+    const typed = c.trim().toUpperCase();
+    if (!typed) return;
+    let hit = pricing.coupons.find((x) => x.code === typed);
+    if (!hit) {
+      // Not listed in the cart: ask the server whether the code exists.
+      try {
+        const res = await fetch(`/api/coupons?code=${encodeURIComponent(typed)}`);
+        if (res.ok) { hit = (await res.json()).coupon; if (hit) addCoupon(hit); }
+      } catch { /* offline: treat as invalid */ }
+    }
     if (!hit) return setErr("That code is not valid");
     const st = couponStatus(hit, base);
     if (!st.ok) return setErr(st.reason!);
@@ -83,6 +92,7 @@ function Coupons() {
 }
 
 export function CartDrawer() {
+  const { products, settings: { membership, shipping } } = useCatalog();
   const s = useStore();
   const { summary } = s;
   const router = useRouter();
@@ -127,7 +137,7 @@ export function CartDrawer() {
                     <div className="flex items-center justify-between">
                       <QtyStepper value={l.qty} onChange={(n) => s.setQty(l.variantId, n)} max={Math.max(1, l.variant.stock)} />
                       <div className="text-right">
-                        <p className="font-extrabold">{inr((memberActive ? memberPrice(l.variant.price) : l.variant.price) * l.qty)}</p>
+                        <p className="font-extrabold">{inr((memberActive ? memberPrice(l.variant.price, membership.discount) : l.variant.price) * l.qty)}</p>
                         <p className="text-xs text-muted line-through">{inr(l.variant.mrp * l.qty)}</p>
                       </div>
                     </div>
@@ -146,7 +156,7 @@ export function CartDrawer() {
                 </div>
               ) : (
                 <div className="flex items-center justify-between gap-3">
-                  <p className="text-sm"><span className="font-bold text-member">Save {inr(Math.max(0, summary.saleTotal - summary.lines.reduce((a, l) => a + memberPrice(l.variant.price) * l.qty, 0)))} more</span> with membership for {inr(membership.price)}</p>
+                  <p className="text-sm"><span className="font-bold text-member">Save {inr(Math.max(0, summary.saleTotal - summary.lines.reduce((a, l) => a + memberPrice(l.variant.price, membership.discount) * l.qty, 0)))} more</span> with membership for {inr(membership.price)}</p>
                   <Button size="sm" variant="member" onClick={() => s.setMembershipInCart(true)}>Join</Button>
                 </div>
               )}

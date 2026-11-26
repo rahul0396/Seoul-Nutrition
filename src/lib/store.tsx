@@ -1,12 +1,14 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import type { CartLine } from "./pricing";
+import type { Coupon } from "@/data/types";
+import type { CartLine, PricingContext } from "./pricing";
 import { totals } from "./pricing";
+import { useCatalog } from "./catalog";
 
-// Client-side store for the storefront. Persisted to localStorage so the cart
-// survives a refresh. Swap the persistence for your backend's cart API later;
-// components only use the functions exposed here.
+// Client-side store for the storefront: cart, wishlist, UI state. Persisted to
+// localStorage so the cart survives a refresh. Prices come from the catalogue
+// the server loaded (useCatalog); the server prices the order again at checkout.
 
 type User = { name: string; phone: string; isMember: boolean } | null;
 
@@ -18,6 +20,8 @@ type Store = {
   clear: () => void;
   couponCode?: string;
   applyCoupon: (code?: string) => void;
+  addCoupon: (c: Coupon) => void; // a valid code that is not listed in the cart
+  pricing: PricingContext;
   membershipInCart: boolean;
   setMembershipInCart: (v: boolean) => void;
   wishlist: string[];
@@ -32,6 +36,7 @@ type Store = {
   toast: string | null;
   showToast: (msg: string) => void;
   summary: ReturnType<typeof totals>;
+  quote: (pay: "online" | "cod") => ReturnType<typeof totals>;
   ready: boolean;
 };
 
@@ -48,6 +53,8 @@ function load(): Partial<Pick<Store, "lines" | "couponCode" | "membershipInCart"
 }
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
+  const catalog = useCatalog();
+  const [extraCoupons, setExtraCoupons] = useState<Coupon[]>([]);
   const [lines, setLines] = useState<CartLine[]>([]);
   const [couponCode, setCoupon] = useState<string | undefined>();
   const [membershipInCart, setMembershipInCart] = useState(false);
@@ -95,10 +102,23 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setLines((prev) => (qty <= 0 ? prev.filter((l) => l.variantId !== variantId) : prev.map((l) => (l.variantId === variantId ? { ...l, qty } : l))));
   }, []);
 
+  // Drop cart lines for products that no longer exist (deleted or archived).
+  useEffect(() => {
+    if (!ready) return;
+    setLines((prev) => {
+      const kept = prev.filter((l) => catalog.findVariant(l.variantId));
+      return kept.length === prev.length ? prev : kept;
+    });
+  }, [ready, catalog]);
+
   const value = useMemo<Store>(() => {
-    const summary = totals(lines, { member: !!user?.isMember, membershipInCart, couponCode });
+    const pricing: PricingContext = { findVariant: catalog.findVariant, coupons: [...catalog.coupons, ...extraCoupons], settings: catalog.settings };
+    const opts = { member: !!user?.isMember, membershipInCart, couponCode };
+    const summary = totals(lines, opts, pricing);
     return {
-      lines, add, setQty,
+      lines, add, setQty, pricing,
+      addCoupon: (c) => setExtraCoupons((x) => (x.some((y) => y.code === c.code) ? x : [...x, c])),
+      quote: (pay) => totals(lines, { ...opts, pay }, pricing),
       remove: (id) => setLines((p) => p.filter((l) => l.variantId !== id)),
       clear: () => { setLines([]); setCoupon(undefined); setMembershipInCart(false); },
       couponCode, applyCoupon: setCoupon,
@@ -109,7 +129,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       cartOpen, setCartOpen, notifyFor, setNotifyFor, toast, showToast,
       summary, ready,
     };
-  }, [lines, add, setQty, couponCode, membershipInCart, wishlist, user, cartOpen, notifyFor, toast, showToast, ready]);
+  }, [lines, add, setQty, couponCode, membershipInCart, wishlist, user, cartOpen, notifyFor, toast, showToast, ready, catalog, extraCoupons]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

@@ -6,11 +6,14 @@ A full D2C supplement storefront in Next.js 16 (App Router), React 19, TypeScrip
 
 ```bash
 npm install
-npm run dev          # http://localhost:3000
-npm run build        # production build
-npm run contrast     # WCAG contrast check on the design tokens
-STATIC_EXPORT=1 npm run build   # static site in out/ (no server needed)
+cp .env.example .env   # add your MongoDB, Payload and Razorpay keys
+npm run seed           # load the starter products into the database
+npm run dev            # store: http://localhost:3000 · admin: http://localhost:3000/admin
+npm run build          # production build
+npm run contrast       # WCAG contrast check on the design tokens
 ```
+
+Without a `.env` the store still runs on the starter data in `src/data` (checkout is switched off). **Setup, daily use and how the backend works: see [BACKEND.md](BACKEND.md).**
 
 ## What's in it
 
@@ -20,7 +23,7 @@ STATIC_EXPORT=1 npm run build   # static site in out/ (no server needed)
 | Collection | `/collections/[handle]` | 20 collections (categories + benefits), type chips with counts, filter drawer (availability, price), 5 sorts, empty state, SEO blocks (comparison table, benefit cards, FAQ, popular searches) |
 | Product | `/products/[handle]` | gallery + thumbnails + lightbox, pack-size cards with savings, member price, stock warning, qty, add to cart / buy now, notify me (out of stock), wishlist, trust badges, highlights, sticky section tabs with scroll-spy, ingredients, how to take, FAQ, lab reports, rating histogram, reviews, write a review, related products, mobile sticky add-to-cart |
 | Cart drawer | everywhere | free-gift milestones, free shipping progress, qty and remove, membership upsell, coupon field + available coupons with eligibility, recommendations, billing breakdown, total savings |
-| Checkout | `/checkout` | address form with validation, online vs COD (COD blocked for membership), prepaid discount, order summary, demo success |
+| Checkout | `/checkout` | address form with validation, Razorpay (UPI, cards, netbanking) or COD, prepaid discount, server-side pricing and stock checks, order confirmation |
 | Search | `/search?q=` + header panel | live results, trending, no-results fallback |
 | Account | `/account` | phone + OTP login (demo OTP `123456`), order history empty state, membership card |
 | Wishlist | `/pages/wishlist` | saved products |
@@ -32,22 +35,14 @@ STATIC_EXPORT=1 npm run build   # static site in out/ (no server needed)
 
 ## Where to change things
 
-- **Brand, contact, announcements, hero slides, coupons, milestones, membership, shipping rules, nav, footer, content pages:** `src/data/site.ts`
-- **Products, prices, pack sizes, stock, copy:** `src/data/products.ts`
+- **Products, prices, stock, coupons, announcements, shipping, COD and membership rules:** in `/admin` once the database is connected (the files in `src/data` are the starter data)
+- **Brand, contact, hero slides, nav, footer, content pages:** `src/data/site.ts`
 - **Collections and their SEO content:** `src/data/collections.ts`
 - **Colours, fonts, radius, shadows, motion:** `src/app/globals.css` (`@theme` block). Keep the names and change the values, then run `npm run contrast`.
-- **Product images:** `src/components/PackArt.tsx` draws placeholder pouches. Put your photos in `public/products/` and render them there instead.
+- **Product images:** upload them on the product in `/admin`. Until then `src/components/PackArt.tsx` draws placeholder pouches.
 - **Video reels:** the quick view in `src/components/home.tsx` (`QuickView`) has a video placeholder.
 - **Placeholder text:** search the code for "Placeholder".
 
-## Not connected yet (backend step)
+## Backend
 
-The cart, wishlist and login are stored in the browser (localStorage) for now. To go live, connect:
-
-- products and orders to a database, plus an admin dashboard to manage them
-- phone OTP login (for example MSG91 or Firebase)
-- payments (Razorpay) with server-side signature verification
-- back-in-stock alerts, reviews, newsletter and lead forms
-- your shipping and tracking provider
-
-`replica/` holds the planning files: recon map, feature matrix, design tokens and component specs.
+Products, orders, customers, coupons, reviews, leads and store settings are managed in the admin panel at `/admin` (Payload CMS + MongoDB). Checkout prices the cart on the server, supports Razorpay and cash on delivery, and keeps stock in step with each order's status. Full guide: [BACKEND.md](BACKEND.md).

@@ -2,14 +2,17 @@
 
 import { useState } from "react";
 import { CheckCircle2 } from "lucide-react";
+import { sendLead } from "@/lib/leads";
 import { Button } from "./ui";
 
 const input = "h-12 w-full rounded-md border border-line-input px-4 outline-none focus:border-ink aria-[invalid=true]:border-danger";
 
-// Hook up: send the form data to your backend or a form service.
+// Saved to the Leads collection in /admin.
 export function LeadForm({ kind }: { kind: "consult" | "contact" }) {
   const [done, setDone] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [busy, setBusy] = useState(false);
+  const [sendError, setSendError] = useState("");
   if (done) {
     return (
       <div className="grid place-items-center rounded-lg bg-surface p-10 text-center animate-pop">
@@ -23,7 +26,7 @@ export function LeadForm({ kind }: { kind: "consult" | "contact" }) {
     <form
       noValidate
       className="space-y-4 rounded-lg border border-line p-6 shadow-card"
-      onSubmit={(e) => {
+      onSubmit={async (e) => {
         e.preventDefault();
         const f = new FormData(e.currentTarget);
         const err: Record<string, string> = {};
@@ -32,7 +35,12 @@ export function LeadForm({ kind }: { kind: "consult" | "contact" }) {
         if (kind === "contact" && !/^\S+@\S+\.\S+$/.test(String(f.get("email") || ""))) err.email = "Enter a valid email";
         if (kind === "contact" && !String(f.get("message") || "").trim()) err.message = "Write your message";
         setErrors(err);
-        if (!Object.keys(err).length) setDone(true);
+        if (Object.keys(err).length) return;
+        setBusy(true);
+        const problem = await sendLead({ kind, name: f.get("name"), phone: f.get("phone"), email: f.get("email") || "", goal: f.get("goal") || undefined, message: f.get("message") || undefined, website: f.get("website") || "" });
+        setBusy(false);
+        if (problem) setSendError(problem);
+        else setDone(true);
       }}
     >
       {([["name", "Full name", "text"], ["phone", "Mobile number", "tel"], ...(kind === "contact" ? [["email", "Email", "email"]] : [])] as [string, string, string][]).map(([n, l, t]) => (
@@ -51,7 +59,9 @@ export function LeadForm({ kind }: { kind: "consult" | "contact" }) {
           {errors.message && <span className="mt-1 block text-sm text-danger">{errors.message}</span>}
         </label>
       )}
-      <Button size="lg" className="w-full">{kind === "consult" ? "Request a call" : "Send message"}</Button>
+      <input name="website" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden />
+      {sendError && <p className="text-sm text-danger" role="alert">{sendError}</p>}
+      <Button size="lg" className="w-full" loading={busy}>{kind === "consult" ? "Request a call" : "Send message"}</Button>
     </form>
   );
 }

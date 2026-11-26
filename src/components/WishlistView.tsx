@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { Heart } from "lucide-react";
-import { products } from "@/data/products";
+import { useCatalog } from "@/lib/catalog";
 import { useStore } from "@/lib/store";
 import { ProductCard } from "./ProductCard";
 
 export function WishlistView() {
+  const { products } = useCatalog();
   const { wishlist, ready } = useStore();
   const items = products.filter((p) => wishlist.includes(p.handle));
   return (

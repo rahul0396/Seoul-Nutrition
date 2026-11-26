@@ -18,7 +18,7 @@ const proteinFaqs = [
   { q: "How long does a 1 KG pack last?", a: "About 30 servings, or one month with one scoop a day." },
 ];
 
-const v = (id: string, label: string, price: number, mrp: number, stock: number): Variant => ({ id, label, price, mrp, stock });
+const v = (id: string, label: string, price: number, mrp: number, stock: number): Variant => ({ id, label, price, mrp, stock, sku: id.toUpperCase() });
 
 function make(p: Partial<Product> & Pick<Product, "id" | "handle" | "title" | "variants">): Product {
   return {
@@ -36,7 +36,7 @@ function make(p: Partial<Product> & Pick<Product, "id" | "handle" | "title" | "v
     ingredients: [],
     howToTake: "Mix one scoop (33 g) in 200 to 250 ml of cold water or milk. Shake for 20 seconds.",
     faqs: proteinFaqs,
-    labReports: ["Protein content report", "Heavy metals report", "Amino profile report", "FSSAI licence"],
+    labReports: ["Protein content report", "Heavy metals report", "Amino profile report", "FSSAI licence"].map((title) => ({ title })),
     specs: {},
     rank: 50,
     ...p,
@@ -239,11 +239,6 @@ export const products: Product[] = [
   }),
 ];
 
-export const getProduct = (handle: string) => products.find((p) => p.handle === handle);
-export const getVariant = (id: string) => {
-  for (const p of products) {
-    const found = p.variants.find((x) => x.id === id);
-    if (found) return { product: p, variant: found };
-  }
-  return undefined;
-};
+// The live store reads products from the database (src/lib/commerce.ts). This
+// list is the starting catalogue: `npm run seed` copies it into the database,
+// and the site falls back to it when DATABASE_URI is not set.

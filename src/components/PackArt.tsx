@@ -1,13 +1,19 @@
 import type { Product } from "@/data/types";
 import { site } from "@/data/site";
 
-// Placeholder product image: a generated pouch illustration in the product's
-// colours. Replace with real photos: put files in public/products/ and render
-// <img src={`/products/${product.handle}-${view}.jpg`} /> here instead.
+// Product image. Shows the photos uploaded in /admin (front = 1st photo,
+// back = 2nd, scoop = 3rd, lifestyle = 4th, matching the gallery order). Until a photo exists for a view,
+// it draws a placeholder pouch in the product's colours.
 
 type View = "front" | "back" | "lifestyle" | "scoop";
+const VIEW_INDEX: Record<View, number> = { front: 0, back: 1, scoop: 2, lifestyle: 3 };
 
 export function PackArt({ product, view = "front", className = "" }: { product: Product; view?: View; className?: string }) {
+  const photo = product.images?.[VIEW_INDEX[view]];
+  if (photo) {
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={photo.url} alt={photo.alt || product.title} loading="lazy" decoding="async" className={`${className} object-cover`} />;
+  }
   const { from, to, ink } = product.art;
   const id = `g-${product.id}-${view}`;
   const isAccessory = product.categories.includes("accessories");

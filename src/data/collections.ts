@@ -1,5 +1,4 @@
-import type { Collection } from "./types";
-import { products } from "./products";
+import type { Collection, Product } from "./types";
 
 const cat = (h: string) => (p: { categories: string[] }) => p.categories.includes(h);
 const ben = (h: string) => (p: { benefits: string[] }) => p.benefits.includes(h);
@@ -68,7 +67,7 @@ export const collections: Collection[] = [
 ];
 
 export const getCollection = (handle: string) => collections.find((c) => c.handle === handle);
-export const productsIn = (handle: string) => {
+export const productsIn = (handle: string, products: Product[]) => {
   const c = getCollection(handle);
   return c ? products.filter(c.match) : [];
 };

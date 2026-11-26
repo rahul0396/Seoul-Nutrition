@@ -3,8 +3,9 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Bell, ChevronLeft, ChevronRight, FileText, Heart, Truck } from "lucide-react";
-import type { Product } from "@/data/types";
-import { reviews as allReviews, shipping, trustBadges } from "@/data/site";
+import type { Product, Review } from "@/data/types";
+import { trustBadges } from "@/data/site";
+import { useCatalog } from "@/lib/catalog";
 import { useStore } from "@/lib/store";
 import { inr, pctOff } from "@/lib/pricing";
 import { Icon } from "./Icon";
@@ -72,21 +73,36 @@ function AnchorTabs({ ids }: { ids: [string, string][] }) {
   );
 }
 
-function ReviewForm({ onDone }: { onDone: () => void }) {
+function ReviewForm({ productId, onDone }: { productId: string; onDone: () => void }) {
   const [rating, setRating] = useState(0);
   const [err, setErr] = useState("");
+  const [busy, setBusy] = useState(false);
   return (
     <form
       className="space-y-3 p-6"
-      onSubmit={(e) => {
+      onSubmit={async (e) => {
         e.preventDefault();
         const f = new FormData(e.currentTarget);
         if (!rating) return setErr("Pick a star rating");
         if (!String(f.get("body") || "").trim()) return setErr("Write a few words about the product");
-        // Hook up: POST the review to your backend for moderation.
-        onDone();
+        if (!String(f.get("name") || "").trim()) return setErr("Add your name");
+        setBusy(true);
+        try {
+          const res = await fetch("/api/reviews", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ productId, rating, title: f.get("title"), body: f.get("body"), author: f.get("name"), website: f.get("website") }),
+          });
+          if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || "Could not send your review");
+          onDone();
+        } catch (error) {
+          setErr(error instanceof Error ? error.message : "Could not send your review");
+        } finally {
+          setBusy(false);
+        }
       }}
     >
+      <input name="website" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden />
       <h2 className="text-xl font-extrabold">Write a review</h2>
       <fieldset>
         <legend className="mb-1 text-sm font-bold">Your rating</legend>
@@ -100,13 +116,14 @@ function ReviewForm({ onDone }: { onDone: () => void }) {
       <label className="block"><span className="mb-1 block text-sm font-bold">Review</span><textarea name="body" rows={4} className="w-full rounded-md border border-line-input p-4 outline-none focus:border-ink" /></label>
       <label className="block"><span className="mb-1 block text-sm font-bold">Name</span><input name="name" className="h-11 w-full rounded-md border border-line-input px-4 outline-none focus:border-ink" /></label>
       {err && <p className="text-sm text-danger" role="alert">{err}</p>}
-      <Button size="lg" className="w-full">Submit review</Button>
+      <Button size="lg" className="w-full" loading={busy}>Submit review</Button>
     </form>
   );
 }
 
-export function ProductDetail({ product }: { product: Product }) {
+export function ProductDetail({ product, reviews }: { product: Product; reviews: Review[] }) {
   const s = useStore();
+  const { shipping } = useCatalog().settings;
   const router = useRouter();
   const [vid, setVid] = useState(product.variants.find((v) => v.stock > 0)?.id ?? product.variants[0].id);
   const [qty, setQty] = useState(1);
@@ -115,7 +132,6 @@ export function ProductDetail({ product }: { product: Product }) {
   const v = product.variants.find((x) => x.id === vid)!;
   const out = v.stock <= 0;
   const wished = s.wishlist.includes(product.handle);
-  const reviews = allReviews.filter((r) => r.productHandle === product.handle || r.productHandle === "*");
 
   useEffect(() => setQty(1), [vid]);
 
@@ -255,10 +271,15 @@ export function ProductDetail({ product }: { product: Product }) {
             <h2 className="mb-4 text-2xl font-extrabold">Lab reports</h2>
             <ul className="grid gap-3 sm:grid-cols-2">
               {product.labReports.map((r) => (
-                <li key={r}><a href="#" className="flex items-center gap-3 rounded-lg border border-line p-4 font-bold transition hover:border-ink"><FileText className="size-5 text-accent" aria-hidden />{r}<span className="ml-auto text-xs font-semibold text-muted">PDF</span></a></li>
+                <li key={r.title}>
+                  {r.url ? (
+                    <a href={r.url} target="_blank" rel="noopener" className="flex items-center gap-3 rounded-lg border border-line p-4 font-bold transition hover:border-ink"><FileText className="size-5 text-accent" aria-hidden />{r.title}<span className="ml-auto text-xs font-semibold text-muted">PDF</span></a>
+                  ) : (
+                    <span className="flex items-center gap-3 rounded-lg border border-line p-4 font-bold text-muted"><FileText className="size-5" aria-hidden />{r.title}<span className="ml-auto text-xs font-semibold">Coming soon</span></span>
+                  )}
+                </li>
               ))}
             </ul>
-            <p className="mt-2 text-xs text-muted">Placeholder links. Upload your real lab PDFs and link them here.</p>
           </section>
         )}
 
@@ -310,7 +331,7 @@ export function ProductDetail({ product }: { product: Product }) {
 
       <Overlay open={reviewOpen} onClose={() => setReviewOpen(false)} side="center" label="Write a review">
         <div className="flex justify-end p-2"><CloseButton onClick={() => setReviewOpen(false)} /></div>
-        <ReviewForm onDone={() => { setReviewOpen(false); s.showToast("Thanks! Your review is pending approval"); }} />
+        <ReviewForm productId={product.id} onDone={() => { setReviewOpen(false); s.showToast("Thanks! Your review is pending approval"); }} />
       </Overlay>
     </>
   );
