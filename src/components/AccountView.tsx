@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useState } from "react";
 import { LogOut, Package } from "lucide-react";
-import { membership, site } from "@/data/site";
+import { site } from "@/data/site";
+import { useCatalog } from "@/lib/catalog";
 import { useStore } from "@/lib/store";
 import { Button } from "./ui";
 
@@ -11,6 +12,7 @@ import { Button } from "./ui";
 // provider (for example MSG91 or Firebase phone auth) in the backend step.
 
 export function AccountView() {
+  const { membership } = useCatalog().settings;
   const { user, signIn, signOut, ready } = useStore();
   const [step, setStep] = useState<"phone" | "otp">("phone");
   const [phone, setPhone] = useState("");

@@ -4,6 +4,7 @@ export type Variant = {
   price: number; // INR, selling price
   mrp: number; // INR, printed MRP
   stock: number;
+  sku?: string;
 };
 
 export type Faq = { q: string; a: string };
@@ -27,7 +28,8 @@ export type Product = {
   ingredients: { name: string; note: string }[];
   howToTake: string;
   faqs: Faq[];
-  labReports: string[];
+  labReports: { title: string; url?: string }[];
+  images?: { url: string; alt: string }[]; // uploaded photos; PackArt is drawn when empty
   specs: Record<string, string>;
   rank: number; // best-selling order, lower is better
   isNew?: boolean;
@@ -62,4 +64,22 @@ export type Review = {
   body: string;
   author: string;
   date: string;
+};
+
+export type CommerceSettings = {
+  announcements: { text: string; href: string }[];
+  shipping: { freeAbove: number; fee: number; prepaidExtra: number };
+  cod: { enabled: boolean; maxOrderValue: number };
+  membership: { price: number; mrp: number; months: number; discount: number };
+  milestones: { items: number; reward: string }[];
+};
+
+// Everything the storefront needs to render and price a cart. Built on the
+// server (from the database, or from src/data when no database is set) and
+// passed to the browser once, in the root layout.
+export type Catalog = {
+  products: Product[];
+  coupons: Coupon[]; // only coupons marked "list it in the cart"
+  settings: CommerceSettings;
+  source: "database" | "static";
 };

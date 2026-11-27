@@ -1,4 +1,4 @@
-import type { Coupon, Review } from "./types";
+import type { CommerceSettings, Coupon, Review } from "./types";
 
 // Everything brand-specific lives here. Change it once, it changes everywhere.
 
@@ -111,6 +111,16 @@ export const membership = {
 };
 
 export const shipping = { freeAbove: 499, fee: 49, prepaidExtra: 5 };
+
+// Starting values for the "Store settings" screen in /admin. Once the database
+// is connected, edit them there instead.
+export const defaultSettings: CommerceSettings = {
+  announcements,
+  shipping,
+  cod: { enabled: true, maxOrderValue: 5000 },
+  membership: { price: membership.price, mrp: membership.mrp, months: membership.months, discount: membership.discount },
+  milestones,
+};
 
 // Placeholder reviews so the review UI has something to show.
 export const reviews: Review[] = [

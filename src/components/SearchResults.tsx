@@ -5,17 +5,18 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Search } from "lucide-react";
 import { trending } from "@/data/site";
-import { products } from "@/data/products";
+import { useCatalog } from "@/lib/catalog";
 import { searchProducts } from "./Header";
 import { ProductCard } from "./ProductCard";
 
 export function SearchResults() {
+  const { products } = useCatalog();
   const params = useSearchParams();
   const router = useRouter();
   const q = params.get("q") ?? "";
   const [value, setValue] = useState(q);
   useEffect(() => setValue(q), [q]);
-  const results = searchProducts(q);
+  const results = searchProducts(q, products);
 
   return (
     <div className="container-x py-10">

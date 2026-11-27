@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Bell, CheckCircle2, Gift } from "lucide-react";
 import { useStore } from "@/lib/store";
+import { sendLead } from "@/lib/leads";
 import { Button, CloseButton, Overlay } from "./ui";
 
 const field = "h-12 w-full rounded-full border border-line-input px-5 outline-none focus:border-ink aria-[invalid=true]:border-danger";
@@ -15,14 +16,15 @@ export function NotifyMeModal() {
   const [done, setDone] = useState(false);
   const close = () => { setNotifyFor(null); setDone(false); setErr({}); };
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const next: typeof err = {};
     if (!/^\S+@\S+\.\S+$/.test(email)) next.email = "Enter a valid email address";
     if (phone && !/^[6-9]\d{9}$/.test(phone.replace(/\D/g, "").slice(-10))) next.phone = "Enter a 10 digit mobile number";
     setErr(next);
     if (Object.keys(next).length) return;
-    // Hook up: POST { product: notifyFor, email, phone } to your back-in-stock endpoint.
+    const problem = await sendLead({ kind: "notify", product: notifyFor ?? "", email, phone: phone || undefined });
+    if (problem) return setErr({ email: problem });
     setDone(true);
     showToast("We will let you know");
   };
@@ -86,7 +88,7 @@ export function SignupPopup() {
           {done ? (
             <><p className="text-2xl font-extrabold">Your code: SEOUL10</p><p className="mt-2 text-muted">Use it at checkout on your first order.</p><Button className="mt-5 w-full" onClick={close}>Start shopping</Button></>
           ) : (
-            <form noValidate onSubmit={(e) => { e.preventDefault(); if (/^\S+@\S+\.\S+$/.test(email)) setDone(true); }} className="space-y-3">
+            <form noValidate onSubmit={async (e) => { e.preventDefault(); if (!/^\S+@\S+\.\S+$/.test(email)) return; await sendLead({ kind: "newsletter", email }); setDone(true); }} className="space-y-3">
               <p className="text-2xl font-extrabold">Get 10% off your first order</p>
               <p className="text-sm text-muted">Join the list for launches and member-only offers.</p>
               <label htmlFor="sp-email" className="sr-only">Email</label>

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Check, ChevronRight, Loader2, Minus, Plus, Star, X } from "lucide-react";
 import { inr, memberPrice, pctOff } from "@/lib/pricing";
+import { useCatalog } from "@/lib/catalog";
 
 type BtnProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: "primary" | "accent" | "outline" | "ghost" | "member";
@@ -71,6 +72,7 @@ export function badgeTone(b: string): "ink" | "accent" | "member" | "soft" {
 
 export function PriceBlock({ price, mrp, size = "md", showMember = true }: { price: number; mrp: number; size?: "sm" | "md" | "lg"; showMember?: boolean }) {
   const off = pctOff(price, mrp);
+  const discount = useCatalog().settings.membership.discount;
   const big = { sm: "text-base", md: "text-lg", lg: "text-3xl" }[size];
   return (
     <div className="space-y-1">
@@ -81,7 +83,7 @@ export function PriceBlock({ price, mrp, size = "md", showMember = true }: { pri
       </div>
       {showMember && (
         <Link href="/pages/membership-access" className="group inline-flex items-center gap-1 text-xs font-semibold text-member">
-          <span>Member price {inr(memberPrice(price))}</span>
+          <span>Member price {inr(memberPrice(price, discount))}</span>
           <span className="rounded-full bg-member px-1.5 py-0.5 text-[10px] font-bold text-on-ink transition group-hover:brightness-110">JOIN</span>
           <ChevronRight className="size-3" aria-hidden />
         </Link>

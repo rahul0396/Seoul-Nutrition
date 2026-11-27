@@ -4,9 +4,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, Heart, Menu, Pause, Play, Search, ShoppingCart, User } from "lucide-react";
-import { announcements, nav, site, trending } from "@/data/site";
+import { nav, site, trending } from "@/data/site";
 import { benefitCollections, collections, getCollection } from "@/data/collections";
-import { products } from "@/data/products";
+import type { Product } from "@/data/types";
+import { useCatalog } from "@/lib/catalog";
 import { useStore } from "@/lib/store";
 import { inr } from "@/lib/pricing";
 import { Icon } from "./Icon";
@@ -14,14 +15,16 @@ import { PackArt } from "./PackArt";
 import { CloseButton, Overlay } from "./ui";
 
 function AnnouncementBar() {
+  const announcements = useCatalog().settings.announcements;
   const [i, setI] = useState(0);
   const [paused, setPaused] = useState(false);
   useEffect(() => {
     if (paused) return;
-    const t = setInterval(() => setI((x) => (x + 1) % announcements.length), 4000);
+    const t = setInterval(() => setI((x) => (x + 1) % Math.max(1, announcements.length)), 4000);
     return () => clearInterval(t);
-  }, [paused]);
-  const a = announcements[i];
+  }, [paused, announcements.length]);
+  const a = announcements[i % Math.max(1, announcements.length)];
+  if (!a) return null;
   return (
     <div className="bg-ink text-on-ink">
       <div className="container-x flex h-9 items-center justify-center gap-3 text-xs font-semibold md:text-sm">
@@ -46,6 +49,7 @@ function Logo() {
 type MenuKey = "shop" | "benefits" | "categories" | "world" | null;
 
 function MegaMenu({ open, onClose }: { open: MenuKey; onClose: () => void }) {
+  const { products } = useCatalog();
   if (!open) return null;
   return (
     <div className="absolute inset-x-0 top-full z-40 border-t border-line bg-bg shadow-pop animate-pop" onMouseLeave={onClose}>
@@ -98,7 +102,8 @@ function SearchPanel({ onClose }: { onClose: () => void }) {
   const router = useRouter();
   const input = useRef<HTMLInputElement>(null);
   useEffect(() => input.current?.focus(), []);
-  const results = useMemo(() => searchProducts(q).slice(0, 6), [q]);
+  const { products } = useCatalog();
+  const results = useMemo(() => searchProducts(q, products).slice(0, 6), [q, products]);
   const go = (term: string) => { onClose(); router.push(`/search?q=${encodeURIComponent(term)}`); };
   return (
     <div className="flex h-full flex-col">
@@ -134,7 +139,7 @@ function SearchPanel({ onClose }: { onClose: () => void }) {
   );
 }
 
-export function searchProducts(q: string) {
+export function searchProducts(q: string, products: Product[]) {
   const t = q.trim().toLowerCase();
   if (!t) return [];
   const words = t.split(/\s+/);
